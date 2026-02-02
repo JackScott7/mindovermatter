@@ -1,10 +1,14 @@
 import os
+import string
 import uuid
-from typing import LiteralString, Literal
+from time import sleep
 
 import typer
 from db import Database
-from utils import TaskStatus, TaskReadType
+from utils import TaskStatus, TaskReadType, ActionStatus
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich import print, json
+
 
 app = typer.Typer(name="MindOverMatter", add_completion=True, pretty_exceptions_enable=True)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -17,7 +21,7 @@ def add(content: str,
         title: str,
         shorthand_title: str = None,
         task_id: uuid.UUID = uuid.uuid4(),
-        tags: list[str] = None) -> None:
+        tags: str = None) -> None:
     """
     Add a new task
 
@@ -34,7 +38,27 @@ def add(content: str,
 
     :return: A Task object
     """
-    db.add_task(content, title, shorthand_title, task_id, tags)
+    with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+        transient=True,
+    ) as progress:
+        pid = progress.add_task(f"Creating {shorthand_title or title}", total=None)
+        task = db.add_task(content, title, shorthand_title, str(task_id), ",".join(tags.split(',')))
+        sleep(0.4)
+
+        if task != ActionStatus.SUCCESS:
+            print(f"Your submitted task:\n"
+                  f"\tContent: <{content[:10].strip(string.whitespace)}>\n"
+                  f"\tTitle: <{title}>\n"
+                  f"\tID: <{task_id}>\n"
+                  "Is a duplicate, if you want the duplicate content, you should set new shorthand title")
+            raise typer.Exit(1)
+
+        progress.update(pid, description="Finished")
+
+    print(f"You task has been created ✨\nID: <{task_id}>")
+    print(f"\nOpen your task by running:\n./mom.py read {task_id}")
 
 
 @app.command()
@@ -44,7 +68,6 @@ def update(content: str, task_id: uuid.UUID, shorthand_title: str = None) -> Non
 
     if :param shorthand_title: is passed, task lookup priority will be based on shorthand title,
     lookup will be done using task_id otherwise
-
 
     :param content: task content
     :param task_id: task ID
@@ -65,7 +88,16 @@ def read(task_id: uuid.UUID, output: TaskReadType = TaskReadType.PLAIN) -> None:
 
     :return: the task's content
     """
-    ...
+    task, status = db.read_task(str(task_id))
+    if status != ActionStatus.SUCCESS:
+        print("There was an error reading the task, check your input and try again")
+        typer.Exit(1)
+
+    if output == TaskReadType.PLAIN:
+        print(f"ID: {task.task_id}\nTitle: {task.title}\nTags: {task.tags}\nContent: \n{task.content}")
+        return
+
+    print(json.dumps(task.__dict__, indent=4))
 
 
 @app.command()
@@ -74,6 +106,7 @@ def delete(task_id: uuid.UUID) -> None:
     Delete a task using its ID
     """
     ...
+
 
 @app.command()
 def search(query: str) -> None:
