@@ -1,5 +1,7 @@
 import sqlite3
 
+from utils import ActionStatus, Task
+
 
 class Database:
     def __init__(self, db_url: str):
@@ -15,34 +17,67 @@ class Database:
 
         self.db_url = db_url
         self.__connection = sqlite3.connect(self.db_url)
+        self.__connection.row_factory = sqlite3.Row
         self.__cursor = self.__connection.cursor()
 
         self.__cursor.execute("""
-            CREATE TABLE IF NOT EXISTS tasks
-                (
-                    task_id         TEXT PRIMARY KEY,
-                    title           TEXT NOT NULL,
-                    shorthand_title TEXT UNIQUE,
-                    content         TEXT NOT NULL,
-                    tags            TEXT
-                )
-            """)
+                              CREATE TABLE IF NOT EXISTS tasks
+                              (
+                                  task_id         TEXT PRIMARY KEY,
+                                  title           TEXT NOT NULL,
+                                  shorthand_title TEXT UNIQUE,
+                                  content         TEXT NOT NULL,
+                                  tags            TEXT
+                              )
+                              """)
 
-    def add_task(self, content, title, shorthand_title, task_id, tags) -> None:
+    def add_task(self, content, title, shorthand_title, task_id, tags) -> ActionStatus:
         """
         Adds a new task to the database.
 
         All the parameter checks (empty, incorrect, invalid) values should be checked before calling this method.
         :return: the task id
         """
-        task = self.__cursor.execute(
-            "INSERT INTO tasks VALUES (?, ?, ?, ?, ?)",
-            (content, title, shorthand_title, task_id, tags)
-        )
-        self.__connection.commit()
+        try:
+            task = self.__cursor.execute(
+                "INSERT INTO tasks VALUES (?, ?, ?, ?, ?)",
+                (task_id, title, shorthand_title, content, tags)
+            )
+            self.__connection.commit()
+            return ActionStatus.SUCCESS
+        except sqlite3.IntegrityError:
+            self.__connection.rollback()
+            return ActionStatus.INTEGRITY_ERROR
 
-    def read_task(self, task_id) -> None:
-        ...
+    def read_task(self, task_id) -> tuple[Task | None, ActionStatus]:
+        """
+        Reads a task from the database.
+
+        :param task_id: task id
+
+        :return: (task, status)
+        """
+        try:
+            self.__cursor.execute('SELECT task_id, title, shorthand_title, content, tags'
+                                    ' FROM tasks WHERE task_id = ?', (task_id,))
+
+            row = self.__cursor.fetchone()
+
+            if not row:
+                return None, ActionStatus.FAILURE
+
+            task = Task(
+                task_id=row["task_id"],
+                title=row["title"],
+                shorthand_title=row["shorthand_title"],
+                content=row["content"],
+                tags=row["tags"],
+            )
+
+            return task, ActionStatus.SUCCESS
+        except sqlite3.Error as e:
+            print(e.sqlite_errorname, e.sqlite_errorcode)
+            return None, ActionStatus.FAILURE
 
     def update_task(self, content, task_id, shorthand_title) -> None:
         ...
