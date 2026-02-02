@@ -67,8 +67,9 @@ class Database:
         :return: (task, status)
         """
         try:
-            self.__cursor.execute('SELECT task_id, title, shorthand_title, content, tags'
-                                    ' FROM tasks WHERE task_id = ?', (task_id,))
+            self.__cursor.execute('SELECT task_id, title, shorthand_title, content, '
+                                        'tags, status, created_at, updated_at FROM tasks WHERE task_id = ?',
+                                (task_id,))
 
             row = self.__cursor.fetchone()
 
@@ -81,11 +82,13 @@ class Database:
                 shorthand_title=row["shorthand_title"],
                 content=row["content"],
                 tags=row["tags"],
+                status=row["status"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"]
             )
 
             return task, ActionStatus.SUCCESS
         except sqlite3.Error as e:
-            print(e.sqlite_errorname, e.sqlite_errorcode)
             return None, ActionStatus.FAILURE
 
     def update_task(self, content, task_id, shorthand_title) -> None:
@@ -107,9 +110,31 @@ class Database:
             self.__connection.commit()
             return ActionStatus.SUCCESS
         except sqlite3.Error as e:
-            print(e.sqlite_errorname, e.sqlite_errorcode)
             self.__connection.rollback()
             return ActionStatus.FAILURE
 
     def search_task(self, content, title, shorthand_title, task_id, tags) -> None:
         ...
+
+    def list_tasks(self, status, limit) -> tuple[list[Task], ActionStatus]:
+        """
+        Lists all tasks from the database.
+
+        :param status: task status
+
+        :param limit: number of tasks to list
+
+        :return: (tasks, status)
+        """
+        try:
+            self.__cursor.execute(
+                'SELECT * FROM tasks WHERE status = ? ORDER BY updated_at DESC limit ?',
+                (status,limit)
+            )
+            tasks = self.__cursor.fetchall()
+            if not tasks:
+                return [], ActionStatus.NOT_FOUND
+
+            return [Task(**x) for x in tasks], ActionStatus.SUCCESS
+        except sqlite3.Error as e:
+            return [], ActionStatus.FAILURE
