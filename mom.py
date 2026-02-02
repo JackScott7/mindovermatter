@@ -1,15 +1,12 @@
+import typer
 import os
 import string
-import sys
 import uuid
 from time import sleep
-
-import typer
-from db import Database
-from utils import TaskStatus, TaskReadType, ActionStatus
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich import print, json
-
+from lib.db import Database
+from lib.utils import OutputType, ActionStatus, TaskStatus
 
 app = typer.Typer(name="MindOverMatter", add_completion=True, pretty_exceptions_enable=True)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -41,8 +38,7 @@ def add(content: str,
     """
     with Progress(
             SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-        transient=True,
+            TextColumn("[progress.description]{task.description}"), transient=True
     ) as progress:
         pid = progress.add_task(f"Creating {shorthand_title or title}", total=None)
         task = db.add_task(content, title, shorthand_title, str(task_id), ",".join(tags.split(',')))
@@ -79,7 +75,7 @@ def update(content: str, task_id: uuid.UUID, shorthand_title: str = None) -> Non
 
 
 @app.command()
-def read(task_id: uuid.UUID, output: TaskReadType = TaskReadType.PLAIN) -> None:
+def read(task_id: uuid.UUID, output: OutputType = OutputType.PLAIN) -> None:
     """
     Read a task, return its content and metadata
 
@@ -94,11 +90,11 @@ def read(task_id: uuid.UUID, output: TaskReadType = TaskReadType.PLAIN) -> None:
         print("There was an error reading the task, check your input and try again")
         typer.Exit(1)
 
-    if output == TaskReadType.PLAIN:
-        print(f"ID: {task.task_id}\nTitle: {task.title}\nTags: {task.tags}\nContent: \n{task.content}")
+    if output == OutputType.PLAIN:
+        print(task.plain)
         return
 
-    print(json.dumps(task.__dict__, indent=4))
+    print(json.dumps(task.json, indent=4))
 
 
 @app.command()
@@ -127,6 +123,49 @@ def search(query: str) -> None:
     :return: the best first match based on query, including metadata of the task
     """
     ...
+
+@app.command()
+def mark(status: TaskStatus, query: str) -> None:
+    """
+    Mark a task using its ID or Shorthand Title
+
+    :param status: Task status
+
+    :param query: can be either TaskID or Shorthand Title if set
+    """
+    ...
+
+
+@app.command(name='list')
+def list_tasks(status: TaskStatus = TaskStatus.ACTIVE, limit: int = 5, output: OutputType = OutputType.PLAIN) -> None:
+    """
+    List all tasks, filtered by status and limit
+
+    :param status: Task status
+
+    :param output: output format
+
+    :param limit: number of tasks to list
+    """
+    with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"), transient=True
+    ) as progress:
+        pid = progress.add_task(f"Fetching ...", total=None)
+        sleep(0.4)
+        tasks, _ = db.list_tasks(status.value, limit)
+        if not tasks:
+            progress.update(pid, description="No results")
+            print(f"[yellow]There are no tasks with status[/yellow]: [red]{status.value}[/red]")
+            raise typer.Exit(1)
+
+        progress.update(pid, description="Found results")
+
+    if output == OutputType.PLAIN:
+        _ = [print(x.plain, "\n") for x in tasks]
+        return
+
+    print(json.dumps([x.json for x in tasks], indent=4))
 
 
 if __name__ == '__main__':
