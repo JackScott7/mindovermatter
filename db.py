@@ -21,15 +21,15 @@ class Database:
         self.__cursor = self.__connection.cursor()
 
         self.__cursor.execute("""
-                              CREATE TABLE IF NOT EXISTS tasks
-                              (
-                                  task_id         TEXT PRIMARY KEY,
-                                  title           TEXT NOT NULL,
-                                  shorthand_title TEXT UNIQUE,
-                                  content         TEXT NOT NULL,
-                                  tags            TEXT
-                              )
-                              """)
+            CREATE TABLE IF NOT EXISTS tasks
+            (
+                task_id         TEXT PRIMARY KEY,
+                title           TEXT NOT NULL,
+                shorthand_title TEXT UNIQUE,
+                content         TEXT NOT NULL,
+                tags            TEXT
+            )
+        """)
 
     def add_task(self, content, title, shorthand_title, task_id, tags) -> ActionStatus:
         """
@@ -82,8 +82,25 @@ class Database:
     def update_task(self, content, task_id, shorthand_title) -> None:
         ...
 
-    def delete_task(self, task_id) -> None:
-        ...
+    def delete_task(self, task_id)  -> ActionStatus:
+        """
+        Deletes a task from the database.
+
+        :param task_id: task id
+
+        :return: (task, status)
+        """
+        try:
+            self.__cursor.execute('DELETE FROM tasks WHERE task_id = ?', (task_id,))
+            if self.__cursor.rowcount == 0:
+                return ActionStatus.NOT_FOUND
+
+            self.__connection.commit()
+            return ActionStatus.SUCCESS
+        except sqlite3.Error as e:
+            print(e.sqlite_errorname, e.sqlite_errorcode)
+            self.__connection.rollback()
+            return ActionStatus.FAILURE
 
     def search_task(self, content, title, shorthand_title, task_id, tags) -> None:
         ...

@@ -1,5 +1,6 @@
 import os
 import string
+import sys
 import uuid
 from time import sleep
 
@@ -49,10 +50,10 @@ def add(content: str,
 
         if task != ActionStatus.SUCCESS:
             print(f"Your submitted task:\n"
-                  f"\tContent: <{content[:10].strip(string.whitespace)}>\n"
-                  f"\tTitle: <{title}>\n"
-                  f"\tID: <{task_id}>\n"
-                  "Is a duplicate, if you want the duplicate content, you should set new shorthand title")
+                    f"\tContent: <{content[:10].strip(string.whitespace)}>\n"
+                    f"\tTitle: <{title}>\n"
+                    f"\tID: <{task_id}>\n"
+                    "Is a duplicate, if you want the duplicate content, you should set new shorthand title")
             raise typer.Exit(1)
 
         progress.update(pid, description="Finished")
@@ -105,7 +106,15 @@ def delete(task_id: uuid.UUID) -> None:
     """
     Delete a task using its ID
     """
-    ...
+    typer.confirm("Are you sure you want to delete this task?", abort=True)
+    status = db.delete_task(str(task_id))
+    if status == ActionStatus.SUCCESS:
+        print(f"✨ Task <{task_id}> deleted successfully")
+        return
+
+    if status == ActionStatus.NOT_FOUND:
+        print("[red]Task not found, please check your input and try again[/red]")
+        raise typer.Exit(1)
 
 
 @app.command()

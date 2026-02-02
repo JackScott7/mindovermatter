@@ -25,3 +25,4 @@ class ActionStatus(Enum):
     INTEGRITY_ERROR = "DUPLICATE_ERROR"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
+    NOT_FOUND = "NOT_FOUND"
