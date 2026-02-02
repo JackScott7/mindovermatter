@@ -1,5 +1,5 @@
 import sqlite3
-from utils import ActionStatus, Task
+from lib.utils import ActionStatus, Task
 
 
 class Database:
@@ -42,10 +42,16 @@ class Database:
         :return: the task id
         """
         try:
-            task = self.__cursor.execute(
-                "INSERT INTO tasks VALUES (?, ?, ?, ?, ?)",
-                (task_id, title, shorthand_title, content, tags)
+            self.__cursor.execute(
+                """INSERT INTO tasks (task_id, title, shorthand_title, content, tags, status) 
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (task_id, title, shorthand_title, content, tags, 'PENDING')
             )
+
+            if self.__cursor.rowcount == 0:
+                return ActionStatus.FAILURE
+
             self.__connection.commit()
             return ActionStatus.SUCCESS
         except sqlite3.IntegrityError:
