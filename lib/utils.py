@@ -52,5 +52,5 @@ class Task:
         """
         :return: Returns the plain text representation of the task
         """
-        return (f"ID: {self.task_id}\nTitle: {self.title}\nTags: {self.tags}\n"
+        return (f"ID: {self.task_id}\nTitle: {self.title}\nTags: {",".join(x.title() for x in self.tags.split(','))}\n"
                 f"Created At: {self.created_at}\nUpdated At: {self.updated_at}\nContent: \n{self.content}")

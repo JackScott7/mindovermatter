@@ -10,7 +10,7 @@ from lib.utils import OutputType, ActionStatus, TaskStatus
 
 app = typer.Typer(name="MindOverMatter", add_completion=True, pretty_exceptions_enable=True)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_URL = os.getenv("MOM_DATABASE_URL", os.path.join(BASE_DIR, "mom.db"))
+DATABASE_URL = os.getenv("MOM_DATABASE_URL", os.path.join(BASE_DIR, "instance", "mom.db"))
 db = Database(DATABASE_URL)
 
 
@@ -94,8 +94,7 @@ def read(task_id: uuid.UUID, output: OutputType = OutputType.PLAIN) -> None:
         print(task.plain)
         return
 
-    print(json.dumps(task.json, indent=4))
-
+    print(task.json)
 
 @app.command()
 def delete(task_id: uuid.UUID) -> None:
