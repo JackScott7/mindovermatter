@@ -13,7 +13,7 @@ class Task:
 class TaskStatus(Enum):
     COMPLETED = "COMPLETED"
     ACTIVE = "ACTIVE"
-    SUSPENDED = "SUSPENDED"
+    PENDING = "PENDING"
 
 
 class TaskReadType(Enum):

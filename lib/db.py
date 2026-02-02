@@ -1,5 +1,4 @@
 import sqlite3
-
 from utils import ActionStatus, Task
 
 
@@ -27,7 +26,11 @@ class Database:
                 title           TEXT NOT NULL,
                 shorthand_title TEXT UNIQUE,
                 content         TEXT NOT NULL,
-                tags            TEXT
+                tags            TEXT,
+                
+                status          TEXT NOT NULL CHECK (status IN ('ACTIVE', 'COMPLETED', 'PENDING')),
+                created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
             )
         """)
 
