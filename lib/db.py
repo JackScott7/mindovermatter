@@ -1,5 +1,5 @@
 import sqlite3
-from lib.utils import ActionStatus, Task
+from lib.utils import ActionStatus, Task, TaskStatus
 
 
 class Database:
@@ -33,6 +33,7 @@ class Database:
                 updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
             )
         """)
+        self.__connection.commit()
 
     def add_task(self, content, title, shorthand_title, task_id, tags) -> ActionStatus:
         """
@@ -46,7 +47,7 @@ class Database:
                 """INSERT INTO tasks (task_id, title, shorthand_title, content, tags, status) 
                     VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (task_id, title, shorthand_title, content, tags, 'pending')
+                (task_id, title, shorthand_title, content, tags, TaskStatus.PENDING.value)
             )
 
             if self.__cursor.rowcount == 0:
@@ -103,7 +104,7 @@ class Database:
         :return: (task, status)
         """
         try:
-            self.__cursor.execute('DELETE FROM tasks WHERE task = ?', (task_id,))
+            self.__cursor.execute('DELETE FROM tasks WHERE task_id = ?', (task_id,))
             if self.__cursor.rowcount == 0:
                 return ActionStatus.NOT_FOUND
 
