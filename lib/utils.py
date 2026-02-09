@@ -1,16 +1,16 @@
-import json
 from enum import Enum
 from dataclasses import dataclass
 
+
 class TaskStatus(Enum):
-    COMPLETED = "COMPLETED"
-    ACTIVE = "ACTIVE"
-    PENDING = "PENDING"
+    COMPLETED = "completed"
+    ACTIVE = "active"
+    PENDING = "pending"
 
 
 class OutputType(Enum):
-    PLAIN = "PLAIN"
-    JSON = "JSON"
+    PLAIN = "plain"
+    JSON = "json"
 
 
 class ActionStatus(Enum):

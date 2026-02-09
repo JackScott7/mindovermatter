@@ -28,7 +28,7 @@ class Database:
                 content         TEXT NOT NULL,
                 tags            TEXT,
                 
-                status          TEXT NOT NULL CHECK (status IN ('ACTIVE', 'COMPLETED', 'PENDING')),
+                status          TEXT NOT NULL CHECK (status IN ('active', 'completed', 'pending')),
                 created_at      TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
             )
@@ -46,7 +46,7 @@ class Database:
                 """INSERT INTO tasks (task_id, title, shorthand_title, content, tags, status) 
                     VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (task_id, title, shorthand_title, content, tags, 'PENDING')
+                (task_id, title, shorthand_title, content, tags, 'pending')
             )
 
             if self.__cursor.rowcount == 0:
@@ -88,7 +88,7 @@ class Database:
             )
 
             return task, ActionStatus.SUCCESS
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             return None, ActionStatus.FAILURE
 
     def update_task(self, content, task_id, shorthand_title) -> None:
@@ -103,13 +103,13 @@ class Database:
         :return: (task, status)
         """
         try:
-            self.__cursor.execute('DELETE FROM tasks WHERE task_id = ?', (task_id,))
+            self.__cursor.execute('DELETE FROM tasks WHERE task = ?', (task_id,))
             if self.__cursor.rowcount == 0:
                 return ActionStatus.NOT_FOUND
 
             self.__connection.commit()
             return ActionStatus.SUCCESS
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             self.__connection.rollback()
             return ActionStatus.FAILURE
 
@@ -136,5 +136,5 @@ class Database:
                 return [], ActionStatus.NOT_FOUND
 
             return [Task(**x) for x in tasks], ActionStatus.SUCCESS
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             return [], ActionStatus.FAILURE
