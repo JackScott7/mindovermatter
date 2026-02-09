@@ -1,7 +1,8 @@
 [project]
 name = "mindovermatter"
+authors = ["JackScott7"]
 version = "0.1.0"
-description = "Add your description here"
+description = " A Feature-rich Todo CLI, while being local, backed by SQLite"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
