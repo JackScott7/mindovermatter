@@ -8,18 +8,23 @@ from rich import print, json
 from lib.db import Database
 from lib.utils import OutputType, ActionStatus, TaskStatus
 
+
 app = typer.Typer(name="MindOverMatter", add_completion=True, pretty_exceptions_enable=True)
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_URL = os.getenv("MOM_DATABASE_URL", os.path.join(BASE_DIR, "instance", "mom.db"))
+DB_DIR = os.path.join(BASE_DIR, "instance")
+DATABASE_URL = os.getenv("MOM_DATABASE_URL", os.path.join(DB_DIR, "mom.db"))
+os.makedirs(DB_DIR, exist_ok=True)
+
 db = Database(DATABASE_URL)
 
 
 @app.command()
 def add(content: str,
         title: str,
-        shorthand_title: str = None,
+        shorthand_title: str = typer.Option(None, '-s', '--short-title'),
         task_id: uuid.UUID = uuid.uuid4(),
-        tags: str = None) -> None:
+        tags: str = typer.Option(None, '-t', '--tags')) -> None:
     """
     Add a new task
 
@@ -41,7 +46,7 @@ def add(content: str,
             TextColumn("[progress.description]{task.description}"), transient=True
     ) as progress:
         pid = progress.add_task(f"Creating {shorthand_title or title}", total=None)
-        task = db.add_task(content, title, shorthand_title, str(task_id), ",".join(tags.split(',')))
+        task = db.add_task(content, title, shorthand_title, str(task_id), ",".join(tags.split(',') if tags else []))
         sleep(0.4)
 
         if task != ActionStatus.SUCCESS:
@@ -75,7 +80,7 @@ def update(content: str, task_id: uuid.UUID, shorthand_title: str = None) -> Non
 
 
 @app.command()
-def read(task_id: uuid.UUID, output: OutputType = OutputType.PLAIN) -> None:
+def read(task_id: uuid.UUID, output: OutputType = typer.Option(OutputType.PLAIN, '-o', '--output')) -> None:
     """
     Read a task, return its content and metadata
 
@@ -87,8 +92,8 @@ def read(task_id: uuid.UUID, output: OutputType = OutputType.PLAIN) -> None:
     """
     task, status = db.read_task(str(task_id))
     if status != ActionStatus.SUCCESS:
-        print("There was an error reading the task, check your input and try again")
-        typer.Exit(1)
+        print("[bold][red]There was an error reading the task, check your input and try again[/red][/bold]")
+        raise typer.Exit(1)
 
     if output == OutputType.PLAIN:
         print(task.plain)
@@ -136,7 +141,10 @@ def mark(status: TaskStatus, query: str) -> None:
 
 
 @app.command(name='list')
-def list_tasks(status: TaskStatus = TaskStatus.ACTIVE, limit: int = 5, output: OutputType = OutputType.PLAIN) -> None:
+def list_tasks(status: TaskStatus = typer.Option(TaskStatus.ACTIVE, "-s", "--status"),
+               limit: int = typer.Option(5, '-l', '--limit'),
+               output: OutputType = typer.Option(OutputType.PLAIN, '-o', '--output')
+               ) -> None:
     """
     List all tasks, filtered by status and limit
 
@@ -150,7 +158,7 @@ def list_tasks(status: TaskStatus = TaskStatus.ACTIVE, limit: int = 5, output: O
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"), transient=True
     ) as progress:
-        pid = progress.add_task(f"Fetching ...", total=None)
+        pid = progress.add_task("Fetching ...", total=None)
         sleep(0.4)
         tasks, _ = db.list_tasks(status.value, limit)
         if not tasks:
