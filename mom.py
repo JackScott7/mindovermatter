@@ -2,6 +2,7 @@ import typer
 import os
 import string
 import uuid
+import tabulate
 from time import sleep
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich import print, json
@@ -126,7 +127,16 @@ def search(query: str) -> None:
 
     :return: the best first match based on query, including metadata of the task
     """
-    ...
+    if not query:
+        print("[bold][red]You didn't enter a query[/bold]")
+        raise typer.Exit(1)
+
+    tasks, result = db.search_task(query)
+    if result == ActionStatus.NOT_FOUND:
+        print("[red]No tasks found with your query[/red]")
+    elif result == ActionStatus.SUCCESS:
+        print("[green]✨ Task(s) found[/green]\n")
+        print(tabulate.tabulate(tasks, headers=['TaskID', 'Title', 'Tags', 'UpdatedAt'], tablefmt="rounded_grid"))
 
 @app.command()
 def mark(status: TaskStatus, query: str) -> None:
@@ -159,7 +169,7 @@ def list_tasks(status: TaskStatus = typer.Option(TaskStatus.ACTIVE, "-s", "--sta
             TextColumn("[progress.description]{task.description}"), transient=True
     ) as progress:
         pid = progress.add_task("Fetching ...", total=None)
-        sleep(0.4)
+        sleep(0.1)
         tasks, _ = db.list_tasks(status.value, limit)
         if not tasks:
             progress.update(pid, description="No results")

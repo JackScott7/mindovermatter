@@ -54,3 +54,11 @@ class Task:
         """
         return (f"ID: {self.task_id}\nTitle: {self.title}\nTags: {",".join(x.title() for x in self.tags.split(','))}\n"
                 f"Created At: {self.created_at}\nUpdated At: {self.updated_at}\nContent: \n{self.content}")
+
+
+@dataclass
+class SearchResult:
+    task_id: str
+    title: str
+    tags: str
+    updated_at: str

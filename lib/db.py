@@ -1,5 +1,5 @@
 import sqlite3
-from lib.utils import ActionStatus, Task, TaskStatus
+from lib.utils import ActionStatus, Task, TaskStatus, SearchResult
 
 
 class Database:
@@ -114,8 +114,17 @@ class Database:
             self.__connection.rollback()
             return ActionStatus.FAILURE
 
-    def search_task(self, content, title, shorthand_title, task_id, tags) -> None:
-        ...
+    def search_task(self, query: str) -> tuple[list[SearchResult], ActionStatus]:
+        self.__cursor.execute(
+            "SELECT task_id, title, tags, updated_at FROM tasks "
+            f"WHERE content like '%{query}%' "
+            f"OR shorthand_title like '%{query}%' "
+            f"OR title like '{query}'"
+        )
+        rows = self.__cursor.fetchall()
+        if not rows:
+            return [], ActionStatus.NOT_FOUND
+        return [SearchResult(**x) for x in rows], ActionStatus.SUCCESS
 
     def list_tasks(self, status, limit) -> tuple[list[Task], ActionStatus]:
         """
