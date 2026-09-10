@@ -1,11 +1,14 @@
 [project]
 name = "mindovermatter"
-authors = ["JackScott7"]
-version = "0.1.0"
+authors = [
+    { name = "Jack Scott", email = "cloner.bl12@gmail.com" }
+]
+version = "0.3.0"
 description = " A Feature-rich Todo CLI, while being local, backed by SQLite"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "rich>=14.3.2",
+    "tabulate>=0.10.0",
     "typer>=0.21.1",
 ]
