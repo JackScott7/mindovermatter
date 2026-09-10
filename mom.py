@@ -147,7 +147,22 @@ def mark(status: TaskStatus, query: str) -> None:
 
     :param query: can be either TaskID or Shorthand Title if set
     """
-    ...
+
+    task, stat = db.get_task(query)
+    if stat == ActionStatus.NOT_FOUND or not task:
+        print("[red]Task not found, please check your input and try again[/red]")
+        raise typer.Exit(1)
+    elif stat == ActionStatus.FAILURE:
+        print("[red]Unknown error occurred, please check your input and try again[/red]")
+        raise typer.Exit(1)
+
+    stat = db.mark_task(task, status)
+    if stat == ActionStatus.NOT_FOUND:
+        print("[red]Task not found, please check your input and try again[/red]")
+        raise typer.Exit(1)
+
+    print(f"[green]Task Updated to '{status.value}' successfully[/green]")
+    print(task.json)
 
 
 @app.command(name='list')

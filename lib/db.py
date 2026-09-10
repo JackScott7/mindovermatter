@@ -1,5 +1,5 @@
 import sqlite3
-from lib.utils import ActionStatus, Task, TaskStatus, SearchResult
+from lib.utils import ActionStatus, Task, TaskStatus, SearchResult, is_valid_uuid4
 
 
 class Database:
@@ -148,3 +148,30 @@ class Database:
             return [Task(**x) for x in tasks], ActionStatus.SUCCESS
         except sqlite3.Error:
             return [], ActionStatus.FAILURE
+
+    def mark_task(self, task: Task, status: TaskStatus) -> ActionStatus:
+        self.__cursor.execute(
+            """UPDATE tasks 
+            SET status = ?,
+            updated_at = CURRENT_TIMESTAMP
+            WHERE task_id = ?""",
+            (status.value, task.task_id)
+        )
+        updated = self.__cursor.rowcount
+        if updated == 0:
+            print(updated)
+            return ActionStatus.NOT_FOUND
+        if updated == 1:
+            self.__connection.commit()
+            return ActionStatus.SUCCESS
+        return ActionStatus.FAILURE
+
+    def get_task(self, query: str) -> tuple[Task | None, ActionStatus]:
+        self.__cursor.execute(
+            "SELECT * FROM tasks WHERE shorthand_title = ? OR task_id = ?",
+            (query, query)
+        )
+        row = self.__cursor.fetchone()
+        if not row:
+            return None, ActionStatus.NOT_FOUND
+        return Task(**row), ActionStatus.SUCCESS

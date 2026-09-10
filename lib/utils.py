@@ -1,5 +1,6 @@
 from enum import Enum
 from dataclasses import dataclass
+from uuid import UUID
 
 
 class TaskStatus(Enum):
@@ -52,8 +53,15 @@ class Task:
         """
         :return: Returns the plain text representation of the task
         """
-        return (f"ID: {self.task_id}\nTitle: {self.title}\nTags: {",".join(x.title() for x in self.tags.split(','))}\n"
-                f"Created At: {self.created_at}\nUpdated At: {self.updated_at}\nContent: \n{self.content}")
+        return (
+            f"ID: {self.task_id}"
+            f"\nStatus: {self.status}"
+            f"\nTitle: {self.title}\nTags: {",".join(x.title() for x in self.tags.split(','))}"
+            f"\nCreated At: {self.created_at}"
+            f"\nUpdated At: {self.updated_at}"
+            f"\nContent: "
+            f"\n{self.content}"
+        )
 
 
 @dataclass
@@ -62,3 +70,11 @@ class SearchResult:
     title: str
     tags: str
     updated_at: str
+
+
+def is_valid_uuid4(string: str) -> bool:
+    try:
+        parsed = UUID(string, version=4)
+        return True if parsed.version == 4 else False
+    except ValueError:
+        return False
