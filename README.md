@@ -30,29 +30,42 @@ If not set, the database defaults to `instance/mom.db` in the project directory.
 ## Usage
 Run the CLI:
 ```bash
-python mom.py --help
+mom --help
 ```
 
 ### Add a task
 ```bash
-python mom.py add "Task content" "Task title" --shorthand-title shorty --tags work,urgent
+mom add "Task content" "Task title" --shorthand-title shorty --tags work,urgent
 ```
 
 ### Read a task
 ```bash
-python mom.py read <task_id>
-python mom.py read <task_id> --output json
+mom read <task_id>
+mom read <task_id> --output json
 ```
 
 ### Delete a task
 ```bash
-python mom.py delete <task_id>
+mom delete <task_id>
 ```
 
 ### List tasks
 ```bash
-python mom.py list --status active --limit 10
-python mom.py list --output json
+mom list --status active --limit 10
+mom list ''--output json
+```
+
+### Search for task(s)
+```bash
+mom search work
+mom search todo
+```
+
+### Mark a task
+```bash
+mom mark completed todo
+# 'todo' here is a short-title which you can set when creating the task
+mom mark pending "2e00e64a-cd4b-4b95-b6d0-fff06eeaf0a0"
 ```
 
 ## Status Values
@@ -61,14 +74,7 @@ python mom.py list --output json
 - `completed`
 
 ## Notes
-- `update`, `search`, and `mark` commands are stubbed and not implemented yet.
 - Duplicate tasks (same content/title/shorthand, depending on DB constraints) return an error.
 
-## Project Layout
-- `mom.py`: CLI entrypoint
-- `lib/db.py`: SQLite data access layer
-- `lib/utils.py`: shared enums and task model
-- `main.py`: placeholder entrypoint
-
 ## License
-MIT
+Check out the here [LICENSE](LICENSE).
